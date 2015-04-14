@@ -1,2 +1,12 @@
+# Configuration for ipset-persistent script
+
+# Definition for ipset binary path
+# Not needed to be defined by default - `ipset` from $PATH will be used
+#IPSET_BIN=/usr/sbin/ipset
+
+# Should configuration files be splitted: one file for one set or not?
+# If "yes" - each set will be stored in its own file named "/etc/ipset/<setname>.set"
+# If "no" - only one file will be created: "/etc/ipset/sets"
 IP_SPLIT_CONFIG="no"
-IPSET_BIN=/usr/sbin/ipset
+
+# end of file

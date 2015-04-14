@@ -30,7 +30,7 @@ IP_SPLIT_CONFIG="yes"
 # Including LSB functions
 . /lib/lsb/init-functions
 
-# Other staff
+# Other stuff
 RETVAL=0
 
 checks()
@@ -40,7 +40,7 @@ checks()
         log_failure_msg "Command ipset is defined in $DEFAULTS, but not found or is not executable. Please fix or remove definition."
         exit 1
     fi
-    if [ $IPSET_BIN == "" ]; then
+    if [ -z $IPSET_BIN ]; then
         if ! hash ipset &>/dev/null; then 
             log_failure_msg "Command ipset not found in PATH - please define it in $DEFAULTS"
             exit 1
@@ -105,6 +105,15 @@ save_sets()
     log_action_end_msg $RETVAL
 }
 
+flush_sets()
+{
+    log_action_begin_msg "Flushing all sets"
+
+    $IPSET_BIN flush
+
+    log_action_end_msg $?
+}
+
 case "$1" in
     start|restart|reload|force-reload)
         checks
@@ -115,10 +124,12 @@ case "$1" in
         save_sets
         ;;
     stop)
+        checks
+        flush_sets
         ;;
     *)
         checks
-        log_success_msg "Usage: $0 {start|save}"
+        log_success_msg "Usage: $0 {start|restart|reload|force-reload|save|stop}"
         exit 1
 esac
 
