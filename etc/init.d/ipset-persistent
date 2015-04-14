@@ -1,0 +1,125 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          ipset-persistent
+# Required-Start:    mountkernfs $local_fs
+# Required-Stop:     $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# X-Start-Before:    $network iptables-persistent
+# X-Stop-After:      $network
+# Short-Description: Load/Save ipset sets
+# Description:       Load/Save ipset sets to /etc/ipset/*.set files. Look /etc/default/ipset-persistent for options.
+### END INIT INFO
+
+# Looks like not needed
+# set -e
+
+# Paths
+DEFAULTS="/etc/default/ipset-persistent"
+IPSET_BIN=""  # not defined by defaults
+CONF_DIR="/etc/ipset"
+CONF_NAME="sets"
+
+# "defaults" default values - shouldn't be changed in this script
+IP_SPLIT_CONFIG="yes"
+
+# Including defaults if available
+[ -r "$DEFAULTS" ] && . "$DEFAULTS"
+
+# Including LSB functions
+. /lib/lsb/init-functions
+
+# Other staff
+RETVAL=0
+
+checks()
+{
+    # Checking for ipset binary
+    if [ ! -x $IPSET_BIN ]; then
+        log_failure_msg "Command ipset is defined in $DEFAULTS, but not found or is not executable. Please fix or remove definition."
+        exit 1
+    fi
+    if [ $IPSET_BIN == "" ]; then
+        if ! hash ipset &>/dev/null; then 
+            log_failure_msg "Command ipset not found in PATH - please define it in $DEFAULTS"
+            exit 1
+        else
+            IPSET_BIN="ipset"
+        fi
+    fi
+    # Checking if directory for sets presents
+    if [ ! -d $CONF_DIR ]; then
+        log_failure_msg "Directory '$CONF_DIR' doesn't exists - can't continue"
+        exit 1
+    fi
+}
+
+load_sets()
+{
+    log_action_begin_msg "Loading ipset sets"
+
+    if [ $IP_SPLIT_CONFIG == "yes" ]; then
+        $IPSET_BIN flush
+        for filename in "$CONF_DIR/*.set"; do
+            $IPSET_BIN restore -exist < "$filename"
+            if [ $? -ne 0 ]; then
+                RETVAL=1
+                log_action_cont_msg " $filename - FAILED"
+            else
+                log_action_cont_msg " $filename loaded"
+            fi
+        done
+    else
+        $IPSET_BIN flush
+        $IPSET_BIN restore -exist < "$CONF_DIR/$CONF_NAME"
+        if [ $? -ne 0 ]; then
+            RETVAL=1
+        fi
+    fi
+
+    log_action_end_msg $RETVAL
+}
+
+save_sets()
+{
+    log_action_begin_msg "Saving ipset sets"
+
+    if [ $IP_SPLIT_CONFIG == "yes" ]; then
+        for setname in `ipset list -n`; do
+            $IPSET_BIN save $setname > "$CONF_DIR/$setname.set"
+            if [ $? -ne 0 ]; then
+                RETVAL=1
+                log_action_cont_msg " $setname - FAILED"
+            else
+                log_action_cont_msg " $setname saved"
+            fi
+        done
+    else
+        $IPSET_BIN save $setname > "$CONF_DIR/$CONF_NAME"
+        if [ $? -ne 0 ]; then
+            RETVAL=1
+        fi
+    fi
+
+    log_action_end_msg $RETVAL
+}
+
+case "$1" in
+    start|restart|reload|force-reload)
+        checks
+        load_sets
+        ;;
+    save)
+        checks
+        save_sets
+        ;;
+    stop)
+        ;;
+    *)
+        checks
+        log_success_msg "Usage: $0 {start|save}"
+        exit 1
+esac
+
+# end of file

@@ -1,0 +1,2 @@
+IP_SPLIT_CONFIG="no"
+IPSET_BIN=/usr/sbin/ipset
