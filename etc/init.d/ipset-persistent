@@ -61,7 +61,7 @@ load_sets()
 {
     log_action_begin_msg "Loading ipset sets"
 
-    if [ "$IP_SPLIT_CONFIG" == "yes" ]; then
+    if [ "$IP_SPLIT_CONFIG" = "yes" ]; then
         $IPSET_BIN flush
         for filename in $CONF_DIR/*.set; do
             if [ -f "$filename" ]; then
