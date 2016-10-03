@@ -93,7 +93,7 @@ save_sets()
 {
     log_action_begin_msg "Saving ipset sets"
 
-    if [ "$IP_SPLIT_CONFIG" == "yes" ]; then
+    if [ "$IP_SPLIT_CONFIG" = "yes" ]; then
         for setname in `ipset list -n`; do
             $IPSET_BIN save $setname > "$CONF_DIR/$setname.set"
             if [ $? -ne 0 ]; then
